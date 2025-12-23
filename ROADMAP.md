@@ -374,13 +374,13 @@ src/
 - [✅] Implement donation status breakdown (pie chart or stats)
 
 **2.4 Volunteer Dashboard**
-- [ ] Create `app/(dashboard)/volunteer/page.tsx`
-- [ ] Display active claims count
-- [ ] Show claims pending pickup
-- [ ] Display completed deliveries count
-- [ ] Add "Find Donations" quick action card
-- [ ] Show impact score with volunteer-specific messaging
-- [ ] Display total kg delivered stat
+- [✅] Create `app/(dashboard)/volunteer/page.tsx`
+- [✅] Display active claims count
+- [✅] Show claims pending pickup
+- [✅] Display completed deliveries count
+- [✅] Add "Find Donations" quick action card
+- [✅] Show impact score with volunteer-specific messaging
+- [✅] Display total kg delivered stat
 
 **2.5 Recipient Dashboard**
 - [ ] Create `app/(dashboard)/recipient/page.tsx`
