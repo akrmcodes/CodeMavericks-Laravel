@@ -383,11 +383,11 @@ src/
 - [✅] Display total kg delivered stat
 
 **2.5 Recipient Dashboard**
-- [ ] Create `app/(dashboard)/recipient/page.tsx`
-- [ ] Display available donations in area
-- [ ] Show nearby donation count
-- [ ] Add "View Available" quick action card
-- [ ] Display simplified impact stats
+- [✅] Create `app/(dashboard)/recipient/page.tsx`
+- [✅] Display available donations in area
+- [✅] Show nearby donation count
+- [✅] Add "View Available" quick action card
+- [✅] Display simplified impact stats
 
 **2.6 Shared Dashboard Components**
 - [ ] Create `ImpactScore.tsx` component with animation

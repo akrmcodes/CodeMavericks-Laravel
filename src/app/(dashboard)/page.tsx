@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DonorDashboard from "@/components/dashboard/donor/DonorDashboard";
 import VolunteerDashboard from "@/components/dashboard/volunteer/VolunteerDashboard";
+import RecipientDashboard from "@/components/dashboard/recipient/RecipientDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 
@@ -36,21 +37,7 @@ export default function DashboardPage() {
 
             {isVolunteer && <VolunteerDashboard />}
 
-            {isRecipient && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Find food nearby</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-3">
-                        <p className="text-slate-700">Locate donations available close to you.</p>
-                        <div>
-                            <Button asChild className="bg-orange-500 hover:bg-orange-600">
-                                <Link href="/donations">Browse Donations</Link>
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+            {isRecipient && <RecipientDashboard />}
 
             {!isDonor && !isVolunteer && !isRecipient && (
                 <Card>
