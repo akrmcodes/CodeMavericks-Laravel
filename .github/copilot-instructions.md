@@ -19,16 +19,15 @@ Your goal is to build a scalable, production-ready frontend using **Next.js 16**
 
 ## 3. Coding Standards (Strict)
 
-- **Environment Abstraction:** NEVER hardcode URLs. ALWAYS use `process.env.NEXT_PUBLIC_API_BASE_URL` via the `lib/api/client.ts` module.
+- **Environment Abstraction:** NEVER hardcode URLs. ALWAYS use `process.env.NEXT_PUBLIC_API_BASE_URL` via the **`src/lib/api.ts`** module.
 - **Type Safety:** NO `any` type allowed. All API responses must be typed using generics `ApiResponse<T>`.
-- **File Structure:**
-  - `src/lib/api/`: API modules (auth, donations, etc.).
-  - `src/components/ui/`: Shadcn components.
-  - `src/app/(auth)/`: Authentication routes.
-  - `src/app/(dashboard)/`: Protected routes.
+- **Single Source of Truth:**
+  - **API:** ALL backend communication MUST go through **`src/lib/api.ts`**. Do not create separate API modules.
+  - **Components:** `src/components/ui/` for Shadcn.
+  - **Routes:** `src/app/(auth)/` and `src/app/(dashboard)/`.
 
 ## 4. Behavior
 
 - If I ask for a component, check if it needs data. If yes, create the Zod schema first.
-- If I ask for an API integration, read the `API-CONTRACT.md` endpoint details first.
+- If I ask for an API integration, **ALWAYS read `src/lib/api.ts` first** to see existing methods.
 - Be concise. Do not explain standard React concepts. Focus on the architecture.

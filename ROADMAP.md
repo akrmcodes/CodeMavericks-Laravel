@@ -464,15 +464,15 @@ src/
 
 **3.4 Donation Creation**
 
-- [ ] Create `app/donations/create/page.tsx`
-- [ ] Build `DonationForm.tsx` with all required fields
-- [ ] Implement geolocation auto-detect for location
-- [ ] Add manual location picker with map
-- [ ] Create date/time picker for expiry
-- [ ] Add quantity input with kg unit
-- [ ] Implement form validation with error messages
-- [ ] Add success redirect to donation detail
-- [ ] Create loading/submitting state
+- [✅] Create `app/donations/create/page.tsx`
+- [✅] Build `DonationForm.tsx` with all required fields
+- [✅] Implement geolocation auto-detect for location
+- [✅] Add manual location picker with map
+- [✅] Create date/time picker for expiry
+- [✅] Add quantity input with kg unit
+- [✅] Implement form validation with error messages
+- [✅] Add success redirect to donation detail
+- [✅] Create loading/submitting state
 
 **3.5 Donation Detail Page**
 
