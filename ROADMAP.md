@@ -268,7 +268,7 @@ src/
 - Secure token storage and auto-refresh
 - Role-based route protection
 
-**Integration - Endpoints from `api.js`:**
+**Integration - Endpoints from `api.ts`:**
 
 - `POST /register` → `authAPI.register(data)`
 - `POST /login` → `authAPI.login(data)`
@@ -356,7 +356,7 @@ src/
 - Quick action cards based on role
 - Activity overview
 
-**Integration - Endpoints from `api.js`:**
+**Integration - Endpoints from `api.ts`:**
 
 - `GET /me` → `authAPI.me()` (for user data + roles)
 - `GET /my-donations` → `donationAPI.myDonations()` (donor dashboard)
@@ -430,7 +430,7 @@ src/
 - Provide pickup code for verification
 - Track donation status (available → claimed → delivered)
 
-**Integration - Endpoints from `api.js`:**
+**Integration - Endpoints from `api.ts`:**
 
 - `GET /donations` → `donationAPI.list()`
 - `GET /donations/{id}` → `donationAPI.get(id)` ⚠️ (needs to be added)
@@ -448,7 +448,7 @@ src/
 
 **3.2 API Module Enhancement**
 
-- [✅] Add `donationAPI.get(id)` method (missing from api.js)
+- [✅] Add `donationAPI.get(id)` method (missing from api.ts)
 - [✅] Ensure all donation methods return typed responses
 - [✅] Add error type definitions for donation operations
 
@@ -505,7 +505,7 @@ src/
 - Mark as picked up → delivered workflow
 - Earn impact points (2x for deliveries)
 
-**Integration - Endpoints from `api.js`:**
+**Integration - Endpoints from `api.ts`:**
 
 - `POST /donations/{id}/claim` → `donationAPI.claim(id)`
 - `GET /claims` → `claimAPI.list()`
@@ -580,7 +580,7 @@ src/
 - Distance from user location
 - Radius filtering (default 10km)
 
-**Integration - Endpoints from `api.js`:**
+**Integration - Endpoints from `api.ts`:**
 
 - `GET /donations/nearby? latitude={lat}&longitude={lng}&radius={km}` → `donationAPI.nearby(lat, lng, radius)`
 
@@ -643,7 +643,7 @@ src/
 - Donation claimed notifications
 - Donation delivered notifications
 
-**Integration - Endpoints (missing from `api.js`, defined in contract):**
+**Integration - Endpoints (missing from `api.ts`, defined in contract):**
 
 - `GET /notifications` → `notificationAPI.list()`
 - `POST /notifications/{id}/read` → `notificationAPI.markRead(id)`
@@ -704,7 +704,7 @@ src/
 **Integration - Endpoints:**
 
 - `GET /me` → `authAPI.me()`
-- `PUT /profile` → `profileAPI.update(data)` ⚠️ (needs to be added to api.js)
+- `PUT /profile` → `profileAPI.update(data)` ⚠️ (needs to be added to api.ts)
 
 #### Task Checklist
 

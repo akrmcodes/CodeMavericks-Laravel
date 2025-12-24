@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Clock, PackageCheck, Truck } from "lucide-react";
+import { Ban, CheckCircle2, Clock, PackageCheck, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Donation, DonationStatus } from "@/types/donation";
 
@@ -21,6 +21,7 @@ const stepMeta: Record<DonationStatus, { label: string; Icon: React.ComponentTyp
     [DonationStatus.PickedUp]: { label: "Picked Up", Icon: Truck },
     [DonationStatus.Delivered]: { label: "Delivered", Icon: CheckCircle2 },
     [DonationStatus.Expired]: { label: "Expired", Icon: Clock },
+    [DonationStatus.Cancelled]: { label: "Cancelled", Icon: Ban },
 };
 
 export function DonationTimeline({ donation }: DonationTimelineProps) {
