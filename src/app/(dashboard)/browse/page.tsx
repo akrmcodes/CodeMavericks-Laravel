@@ -216,6 +216,10 @@ export default function BrowseDonationsPage() {
     const [filterTab, setFilterTab] = useState<FilterTab>("all");
     const [searchQuery, setSearchQuery] = useState("");
 
+    // 🔧 DEBUG: Store raw response for visual debugging
+    const [debugRawResponse, setDebugRawResponse] = useState<unknown>(null);
+    const [showDebug, setShowDebug] = useState(false);
+
     // -------------------------------------------------------------------------
     // DATA FETCHING
     // -------------------------------------------------------------------------
@@ -224,17 +228,45 @@ export default function BrowseDonationsPage() {
         try {
             const response = await api.donations.list();
 
-            // Safely unwrap nested data structure
-            let data: unknown = response;
-            if ((response as { data?: unknown }).data) {
-                data = (response as { data?: unknown }).data;
-            }
-            // Handle double-wrapped responses from Laravel
-            if ((data as { data?: unknown }).data) {
-                data = (data as { data?: unknown }).data;
-            }
+            // 🔍 DEBUG: Log raw API response structure
+            console.log("🔍 [Browse] Raw API Response:", response);
+            console.log("🔍 [Browse] Response type:", typeof response);
 
-            const donationList = Array.isArray(data) ? data : [];
+            // Store for visual debugging
+            setDebugRawResponse(response);
+
+            // =================================================================
+            // BULLETPROOF DATA EXTRACTION
+            // Handles: direct array, { data: [] }, { data: { data: [] } }, etc.
+            // =================================================================
+            const extractDonationsArray = (input: unknown): Donation[] => {
+                // If it's already an array, return it
+                if (Array.isArray(input)) {
+                    console.log("✅ [Browse] Found direct array, length:", input.length);
+                    return input as Donation[];
+                }
+
+                // If it's an object, try to find the array
+                if (input && typeof input === "object") {
+                    const obj = input as Record<string, unknown>;
+
+                    // Check common wrapper keys in order of likelihood
+                    const possibleKeys = ["data", "donations", "items", "results"];
+                    for (const key of possibleKeys) {
+                        if (key in obj) {
+                            const nested = obj[key];
+                            console.log(`🔍 [Browse] Found key "${key}", recursing...`);
+                            return extractDonationsArray(nested);
+                        }
+                    }
+                }
+
+                console.warn("⚠️ [Browse] Could not extract donations array from:", input);
+                return [];
+            };
+
+            const donationList = extractDonationsArray(response);
+            console.log("✅ [Browse] Final donations count:", donationList.length);
             setDonations(donationList);
 
             if (showRefreshToast) {
@@ -269,15 +301,23 @@ export default function BrowseDonationsPage() {
 
         return donations.filter((donation) => {
             // Status filter
+            // IMPORTANT: Backend uses 'available' / 'reserved' while frontend uses 'pending' / 'claimed'
+            // We must accept BOTH naming conventions
             const status = String(donation.status).toLowerCase();
 
+            // Map backend statuses to categories
+            const isAvailableStatus = ["pending", "available"].includes(status);
+            const isClaimedStatus = ["claimed", "reserved", "picked_up"].includes(status);
+
             if (filterTab === "pending") {
-                if (status !== "pending") return false;
+                // "Ready to Claim" = pending OR available
+                if (!isAvailableStatus) return false;
             } else if (filterTab === "claimed") {
-                if (!["claimed", "picked_up"].includes(status)) return false;
+                // "In Progress" = claimed, reserved, or picked_up
+                if (!isClaimedStatus) return false;
             } else if (filterTab === "all") {
-                // Show pending and claimed (active workflow items)
-                if (!["pending", "claimed", "picked_up"].includes(status)) return false;
+                // Show all active workflow items (exclude delivered, expired, cancelled)
+                if (!isAvailableStatus && !isClaimedStatus) return false;
             }
 
             // Search filter
@@ -303,12 +343,18 @@ export default function BrowseDonationsPage() {
     // -------------------------------------------------------------------------
 
     const stats = useMemo(() => {
-        const pending = donations.filter(d =>
-            String(d.status).toLowerCase() === "pending"
-        ).length;
-        const claimed = donations.filter(d =>
-            ["claimed", "picked_up"].includes(String(d.status).toLowerCase())
-        ).length;
+        // Count available donations (backend: 'available', frontend: 'pending')
+        const pending = donations.filter(d => {
+            const status = String(d.status).toLowerCase();
+            return ["pending", "available"].includes(status);
+        }).length;
+
+        // Count in-progress donations (backend: 'reserved', frontend: 'claimed')
+        const claimed = donations.filter(d => {
+            const status = String(d.status).toLowerCase();
+            return ["claimed", "reserved", "picked_up"].includes(status);
+        }).length;
+
         return { pending, claimed, total: pending + claimed };
     }, [donations]);
 
@@ -318,6 +364,39 @@ export default function BrowseDonationsPage() {
 
     return (
         <div className="space-y-6 p-4">
+            {/* 🔧 VISUAL DEBUG PANEL - Remove in production */}
+            <div className="rounded-lg border-2 border-dashed border-orange-400 bg-orange-50 p-4">
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold text-orange-700">
+                        🔧 DEBUG PANEL (Remove in production)
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowDebug(!showDebug)}
+                        className="text-orange-700 border-orange-400"
+                    >
+                        {showDebug ? "Hide" : "Show"} Raw API Response
+                    </Button>
+                </div>
+                <div className="text-xs space-y-1 text-orange-800">
+                    <p>📊 <strong>Total donations fetched:</strong> {donations.length}</p>
+                    <p>✅ <strong>After filter:</strong> {filteredDonations.length}</p>
+                    <p>📝 <strong>Status breakdown:</strong> {JSON.stringify(
+                        donations.reduce((acc, d) => {
+                            const s = String(d.status).toLowerCase();
+                            acc[s] = (acc[s] || 0) + 1;
+                            return acc;
+                        }, {} as Record<string, number>)
+                    )}</p>
+                </div>
+                {showDebug && (
+                    <pre className="mt-3 max-h-96 overflow-auto rounded bg-gray-900 p-3 text-xs text-green-400">
+                        {JSON.stringify(debugRawResponse, null, 2)}
+                    </pre>
+                )}
+            </div>
+
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>

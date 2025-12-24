@@ -144,11 +144,13 @@ export interface DonationFormData {
 
 /**
  * Check if a donation is available for claiming
+ * IMPORTANT: Backend may return "available" or "pending" - accept both
  */
 export function isDonationAvailable(donation: Donation | null | undefined): boolean {
   if (!donation) return false;
   const status = String(donation.status).toLowerCase();
-  return status === "pending" || status === DonationStatus.Pending;
+  // Accept both "pending" (frontend convention) and "available" (backend convention)
+  return status === "pending" || status === "available" || status === DonationStatus.Pending;
 }
 
 /**

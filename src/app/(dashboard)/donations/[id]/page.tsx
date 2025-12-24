@@ -22,9 +22,7 @@ import {
     FoodType,
     FOOD_TYPE_LABELS,
     isDonationAvailable,
-    isDonationOwner,
 } from "@/types/donation";
-import { isClaimOwner } from "@/types/claim";
 
 // =============================================================================
 // VIEW TYPES
@@ -93,17 +91,59 @@ export default function DonationDetailPage() {
     }, [params?.id]);
 
     // -------------------------------------------------------------------------
-    // VIEW MODE DETERMINATION
+    // VIEW MODE DETERMINATION (Bulletproof with Type Coercion)
     // -------------------------------------------------------------------------
 
     const viewMode = useMemo<ViewMode>(() => {
-        if (!donation || !user) return "guest_view";
+        // 🔍 DEBUG: Log current state
+        console.log("🔍 [Detail] Computing viewMode...");
+        console.log("🔍 [Detail] Raw donation object:", donation);
+        console.log("🔍 [Detail] Raw user object:", user);
 
-        const userId = user.id;
-        const userRole = user.roles?.[0];
+        // CRITICAL: Don't default to guest while still loading
+        if (!donation) {
+            console.log("⏳ [Detail] No donation yet, returning guest_view");
+            return "guest_view";
+        }
+
+        if (!user) {
+            console.log("⏳ [Detail] No user yet, returning guest_view");
+            return "guest_view";
+        }
+
+        // =================================================================
+        // BULLETPROOF DONOR ID EXTRACTION
+        // Backend returns donor as object { id, name } OR donor_id as number
+        // Handle BOTH cases with fallback chain
+        // =================================================================
+        const normalizeId = (id: unknown): string => {
+            if (id === null || id === undefined) return "";
+            return String(id).trim();
+        };
+
+        const userId = normalizeId(user.id);
+
+        // Extract donor ID from multiple possible locations
+        // Priority: donor.id (object) > donor_id (direct field)
+        const donorIdRaw = donation.donor?.id ?? donation.donor_id ?? null;
+        const donorId = normalizeId(donorIdRaw);
+
+        const userRole = user.roles?.[0]?.toLowerCase() ?? "";
+
+        console.log("👮 [Detail] ID Comparison:", {
+            userId,
+            donorId,
+            donorIdRaw,
+            donorObject: donation.donor,
+            donorIdDirect: donation.donor_id,
+            areEqual: userId !== "" && donorId !== "" && userId === donorId,
+            userRole,
+        });
 
         // Check if current user is the donation owner (donor)
-        if (isDonationOwner(donation, userId)) {
+        // Using normalized string comparison with non-empty check
+        if (userId !== "" && donorId !== "" && userId === donorId) {
+            console.log("✅ [Detail] User IS the donor owner");
             return "donor_owner";
         }
 
@@ -111,27 +151,40 @@ export default function DonationDetailPage() {
         if (userRole === "volunteer") {
             // Check if donation is available for claiming
             if (isDonationAvailable(donation)) {
+                console.log("✅ [Detail] Volunteer can claim (donation available)");
                 return "volunteer_available";
             }
 
             // Check if this volunteer claimed it
-            if (donation.claim && isClaimOwner(donation.claim, userId)) {
-                return "volunteer_claimed";
-            }
-
-            // Someone else claimed it
             if (donation.claim) {
+                const claimVolunteerId = normalizeId(donation.claim.volunteer_id);
+                console.log("👮 [Detail] Claim comparison:", { claimVolunteerId, userId, match: claimVolunteerId === userId });
+
+                if (claimVolunteerId === userId) {
+                    console.log("✅ [Detail] Volunteer owns this claim");
+                    return "volunteer_claimed";
+                }
+
+                console.log("✅ [Detail] Donation reserved by another volunteer");
                 return "volunteer_reserved";
             }
 
             return "volunteer_available";
         }
 
+        // For donors viewing other people's donations
+        if (userRole === "donor") {
+            console.log("✅ [Detail] Donor viewing (not owner)");
+            return "recipient_view"; // Donors can view but not claim
+        }
+
         // Recipients and other roles
         if (userRole === "recipient") {
+            console.log("✅ [Detail] Recipient view");
             return "recipient_view";
         }
 
+        console.log("⚠️ [Detail] Fallback to guest_view");
         return "guest_view";
     }, [donation, user]);
 
@@ -222,8 +275,36 @@ export default function DonationDetailPage() {
     // RENDER: Main Content
     // -------------------------------------------------------------------------
 
+    // Extract donor ID for debug display
+    const donorIdRaw = donation.donor?.id ?? donation.donor_id ?? "N/A";
+
     return (
         <div className="space-y-6 p-4">
+            {/* 🔧 VISUAL DEBUG PANEL - Remove in production */}
+            <div className="rounded-lg border-2 border-dashed border-purple-400 bg-purple-50 p-4">
+                <span className="text-sm font-bold text-purple-700">
+                    🔧 DEBUG PANEL (Remove in production)
+                </span>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-purple-800">
+                    <p>👤 <strong>User ID:</strong> {user?.id ?? "null"}</p>
+                    <p>🏠 <strong>Donor ID (from API):</strong> {String(donorIdRaw)}</p>
+                    <p>🎭 <strong>User Role:</strong> {user?.roles?.[0] ?? "none"}</p>
+                    <p>📋 <strong>Donation Status:</strong> {donation.status}</p>
+                    <p className="col-span-2">
+                        🎯 <strong>Resolved viewMode:</strong>{" "}
+                        <span className="rounded bg-purple-200 px-2 py-0.5 font-mono font-bold">
+                            {viewMode}
+                        </span>
+                    </p>
+                    <p className="col-span-2">
+                        🔗 <strong>donor object:</strong> {JSON.stringify(donation.donor)}
+                    </p>
+                    <p className="col-span-2">
+                        🔢 <strong>donor_id field:</strong> {String(donation.donor_id ?? "undefined")}
+                    </p>
+                </div>
+            </div>
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="space-y-1">
