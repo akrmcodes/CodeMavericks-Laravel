@@ -3,11 +3,13 @@ import { DonationStatus } from "@/types/donation";
 import { cn } from "@/lib/utils";
 
 interface StatusBadgeProps {
-    status: DonationStatus;
+    status: DonationStatus | string;
     className?: string;
 }
 
-const STATUS_STYLES: Record<DonationStatus, { bg: string; text: string; Icon: React.ComponentType<{ className?: string }> }> = {
+type Variant = { bg: string; text: string; Icon: React.ComponentType<{ className?: string }> };
+
+const STATUS_STYLES: Record<DonationStatus, Variant> = {
     [DonationStatus.Pending]: {
         bg: "bg-amber-100",
         text: "text-amber-800",
@@ -35,8 +37,22 @@ const STATUS_STYLES: Record<DonationStatus, { bg: string; text: string; Icon: Re
     },
 };
 
+const FALLBACK_VARIANT: Variant = {
+    bg: "bg-slate-100",
+    text: "text-slate-700",
+    Icon: ShieldAlert,
+};
+
 export function StatusBadge({ status, className }: StatusBadgeProps) {
-    const variant = STATUS_STYLES[status];
+    const normalizedStatus = typeof status === "string" ? status.toLowerCase() : "";
+    const variant = STATUS_STYLES[normalizedStatus as DonationStatus] ?? FALLBACK_VARIANT;
+
+    if (variant === FALLBACK_VARIANT) {
+        console.warn("Unknown status:", status);
+    }
+
+    const label = normalizedStatus ? normalizedStatus.replace("_", " ") : "unknown";
+
     return (
         <span
             className={cn(
@@ -47,7 +63,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
             )}
         >
             <variant.Icon className="h-3 w-3" aria-hidden />
-            <span className="capitalize">{status.replace("_", " ")}</span>
+            <span className="capitalize">{label}</span>
         </span>
     );
 }

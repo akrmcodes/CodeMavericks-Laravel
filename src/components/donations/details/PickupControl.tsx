@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { differenceInMinutes, formatDistanceStrict } from "date-fns";
 import { Copy, ExternalLink, Timer } from "lucide-react";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
@@ -37,11 +38,30 @@ export function PickupControl({ donation }: PickupControlProps) {
     }, [expiresAt]);
 
     const pickupCode = useMemo(() => {
-        if (donation.claim) {
-            return donation.claim.id.toString().padStart(6, "0");
+        const idSource = donation.claim?.id ?? donation.id;
+        if (typeof idSource === "number" && Number.isFinite(idSource)) {
+            return idSource.toString().padStart(6, "0");
         }
-        return donation.id.toString().padStart(6, "0");
-    }, [donation.claim, donation.id]);
+        console.warn("PickupControl: missing donation/claim id", { donation });
+        return "000000";
+    }, [donation]);
+
+    const handleNavigate = () => {
+        const lat = donation.latitude;
+        const lng = donation.longitude;
+        const address = donation.pickup_address;
+
+        let url = "";
+        if (lat && lng && (lat !== 0 || lng !== 0)) {
+            url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+        } else if (address) {
+            url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+        } else {
+            toast.error("No location data available");
+            return;
+        }
+        window.open(url, "_blank");
+    };
 
     const handleCopy = async () => {
         try {
@@ -50,8 +70,6 @@ export function PickupControl({ donation }: PickupControlProps) {
             /* noop */
         }
     };
-
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${donation.latitude},${donation.longitude}`;
 
     return (
         <motion.div
@@ -85,10 +103,10 @@ export function PickupControl({ donation }: PickupControlProps) {
                             <p className="text-sm font-semibold">Pickup Location</p>
                             <p className="text-xs text-white/80">Lat: {donation.latitude}, Lng: {donation.longitude}</p>
                             <p className="text-xs text-white/70">{donation.pickup_address}</p>
-                            <Button asChild size="sm" variant="secondary" className="mt-2 w-max">
-                                <a href={mapsUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2">
+                            <Button size="sm" variant="secondary" className="mt-2 w-max" onClick={handleNavigate}>
+                                <span className="flex items-center gap-2">
                                     <ExternalLink className="h-4 w-4" aria-hidden /> Navigate
-                                </a>
+                                </span>
                             </Button>
                         </div>
                     </div>

@@ -92,7 +92,7 @@ export default function Home() {
             <Link href="/login">Login</Link>
           </Button>
           <Button asChild className="bg-emerald-600 px-4 hover:bg-emerald-700">
-            <Link href="/register">Join</Link>
+            <Link href="/register">Join Now</Link>
           </Button>
         </div>
       </header>

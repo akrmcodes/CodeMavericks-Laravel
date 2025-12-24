@@ -25,10 +25,16 @@ interface StepOneDetailsProps {
 
 export function StepOneDetails({ onNext }: StepOneDetailsProps) {
     const form = useFormContext<DonationFormValues>();
+    const requiredFields: Array<keyof DonationFormValues> = ["title", "food_type", "quantity", "description"];
 
-    const handleNext = form.handleSubmit(() => {
+    const handleNext = async () => {
+        const isValid = await form.trigger(requiredFields);
+        if (!isValid) {
+            console.warn("[Donation Wizard] Step 1 validation errors", form.formState.errors);
+            return;
+        }
         onNext();
-    });
+    };
 
     return (
         <motion.div
@@ -100,7 +106,20 @@ export function StepOneDetails({ onNext }: StepOneDetailsProps) {
                         <FormLabel>Quantity (kg)</FormLabel>
                         <FormControl>
                             <div className="flex items-center gap-2">
-                                <Input type="number" step="0.1" min="0" {...field} />
+                                <Input
+                                    type="number"
+                                    step="0.1"
+                                    min="0"
+                                    name={field.name}
+                                    ref={field.ref}
+                                    value={field.value ?? ""}
+                                    onBlur={field.onBlur}
+                                    onChange={(event) => {
+                                        const value = event.target.value;
+                                        const numericValue = event.target.valueAsNumber;
+                                        field.onChange(value === "" ? undefined : numericValue);
+                                    }}
+                                />
                                 <span className="text-sm text-muted-foreground">kg</span>
                             </div>
                         </FormControl>

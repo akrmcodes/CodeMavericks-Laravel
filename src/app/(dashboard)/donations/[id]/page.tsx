@@ -32,9 +32,20 @@ export default function DonationDetailPage() {
 
         const fetchDonation = async () => {
             try {
-                const res = await api.donations.get(donationId);
-                setDonation(res.data);
+                const response = await api.donations.get(donationId);
+                console.log("🔍 API Response Debug:", response);
+
+                let data: unknown = response;
+                if ((response as { data?: unknown }).data) {
+                    data = (response as { data?: unknown }).data;
+                }
+                if ((data as { data?: unknown }).data) {
+                    data = (data as { data?: unknown }).data;
+                }
+
+                setDonation(data as Donation);
             } catch (error) {
+                console.error(error);
                 const apiError = error as ApiError;
                 if (apiError?.status === 404) {
                     setNotFound(true);
@@ -117,11 +128,11 @@ export default function DonationDetailPage() {
                             <div className="flex flex-wrap gap-4 text-sm">
                                 <div className="flex items-center gap-2 rounded-lg border border-border/70 px-3 py-2">
                                     <span className="text-muted-foreground">Quantity</span>
-                                    <span className="font-semibold">{donation.quantity} kg</span>
+                                    <span className="font-semibold">{donation.quantity ?? "N/A"} kg</span>
                                 </div>
                                 <div className="flex items-center gap-2 rounded-lg border border-border/70 px-3 py-2">
                                     <MapPin className="h-4 w-4 text-muted-foreground" aria-hidden />
-                                    <span className="font-medium">{donation.pickup_address}</span>
+                                    <span className="font-medium">{donation.pickup_address || "N/A"}</span>
                                 </div>
                             </div>
                         </CardContent>

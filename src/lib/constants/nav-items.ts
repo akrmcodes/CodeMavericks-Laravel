@@ -14,7 +14,7 @@ export type NavItem = {
 export const NAV_ITEMS: Record<Role, NavItem[]> = {
   donor: [
     { title: "Dashboard", href: "/dashboard", icon: Home },
-    { title: "My Donations", href: "/donations/my", icon: Gift },
+    { title: "My Donations", href: "/donations", icon: Gift },
     { title: "Create Donation", href: "/donations/create", icon: PlusCircle },
     { title: "Profile", href: "/profile", icon: User },
   ],

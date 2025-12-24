@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MapPin, Package, Salad, Soup, Wheat } from "lucide-react";
 import { formatDistanceToNowStrict } from "date-fns";
 import { motion } from "framer-motion";
@@ -70,12 +71,14 @@ export function DonationCard({ donation, onAction, actionLabel = "View details" 
                     <div className="text-xs text-muted-foreground">
                         Created {formatDistanceToNowStrict(new Date(donation.created_at), { addSuffix: true })}
                     </div>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onAction?.(donation.id)}
-                    >
-                        {actionLabel}
+                    <Button asChild size="sm" variant="outline">
+                        <Link
+                            href={`/donations/${donation.id}`}
+                            onClick={() => onAction?.(donation.id)}
+                            aria-label={`Manage donation ${donation.title}`}
+                        >
+                            {actionLabel}
+                        </Link>
                     </Button>
                 </CardFooter>
             </Card>

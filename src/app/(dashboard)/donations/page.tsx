@@ -23,8 +23,16 @@ export default function Page() {
         const fetchDonations = async () => {
             try {
                 const response = await api.donations.myDonations();
+                console.log("API Response:", response);
                 if (!isMounted) return;
-                setDonations(response.data);
+                const candidates: unknown[] = [
+                    response,
+                    (response as { data?: unknown })?.data,
+                    (response as { data?: { data?: unknown } })?.data?.data,
+                ];
+
+                const resolvedDonations = candidates.find((candidate): candidate is Donation[] => Array.isArray(candidate));
+                setDonations(resolvedDonations ?? []);
             } catch (error: unknown) {
                 if (!isMounted) return;
                 const message = error instanceof Error ? error.message : "Failed to load donations";
@@ -42,21 +50,24 @@ export default function Page() {
     }, []);
 
     const filteredDonations = useMemo(() => {
+        const safeDonations = Array.isArray(donations) ? donations : [];
         const normalizedSearch = search.trim().toLowerCase();
-        const statusMap: Record<typeof filter, DonationStatus[]> = {
+        const statusMap: Record<typeof filter, string[]> = {
             all: [],
-            active: ["pending"] as DonationStatus[],
-            in_progress: ["claimed", "picked_up"] as DonationStatus[],
-            history: ["delivered", "expired"] as DonationStatus[],
+            active: ["PENDING"],
+            in_progress: ["CLAIMED", "PICKED_UP", "RESERVED"],
+            history: ["DELIVERED", "EXPIRED", "CANCELLED"],
         };
 
-        return donations.filter((donation) => {
-            const matchesSearch = normalizedSearch
-                ? donation.title.toLowerCase().includes(normalizedSearch)
-                : true;
+        return safeDonations.filter((donation) => {
+            const statusUpper = String(donation.status ?? "").toUpperCase();
             const allowedStatuses = statusMap[filter];
-            const matchesStatus = allowedStatuses.length ? allowedStatuses.includes(donation.status) : true;
-            return matchesSearch && matchesStatus;
+            const matchesStatus = allowedStatuses.length ? allowedStatuses.includes(statusUpper) : true;
+
+            if (!normalizedSearch) return matchesStatus;
+
+            const matchesSearch = donation.title.toLowerCase().includes(normalizedSearch);
+            return matchesStatus && matchesSearch;
         });
     }, [donations, filter, search]);
 
