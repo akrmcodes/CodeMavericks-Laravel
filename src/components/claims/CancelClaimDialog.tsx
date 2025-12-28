@@ -15,6 +15,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { api, type ApiError } from "@/lib/api";
+import { useNotifications } from "@/context/NotificationContext";
 
 interface CancelClaimDialogProps {
     claimId: number;
@@ -32,6 +33,7 @@ export function CancelClaimDialog({
     onSuccess,
 }: CancelClaimDialogProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const { addNotification } = useNotifications();
 
     const handleCancel = useCallback(async () => {
         setIsLoading(true);
@@ -41,6 +43,11 @@ export function CancelClaimDialog({
             toast.success("Claim cancelled", {
                 description: "The donation is now available for others to claim.",
             });
+            addNotification(
+                "Claim Cancelled",
+                "The donation has been released back to the pool.",
+                "warning"
+            );
             onOpenChange(false);
             onSuccess?.();
         } catch (error) {
@@ -64,7 +71,7 @@ export function CancelClaimDialog({
         } finally {
             setIsLoading(false);
         }
-    }, [claimId, onOpenChange, onSuccess]);
+    }, [claimId, onOpenChange, onSuccess, addNotification]);
 
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>

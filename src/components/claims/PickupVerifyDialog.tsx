@@ -18,6 +18,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/comp
 import { api, type ApiError } from "@/lib/api";
 import { PICKUP_CODE_LENGTH, isValidPickupCode } from "@/lib/validators/claim";
 import { cn } from "@/lib/utils";
+import { useNotifications } from "@/context/NotificationContext";
 
 interface PickupVerifyDialogProps {
     claimId: number;
@@ -47,6 +48,7 @@ export function PickupVerifyDialog({
     const [state, setState] = useState<DialogState>("input");
     const [errorMessage, setErrorMessage] = useState<string>("");
     const [shouldShake, setShouldShake] = useState(false);
+    const { addNotification } = useNotifications();
 
     const resetState = useCallback(() => {
         setCode("");
@@ -85,6 +87,11 @@ export function PickupVerifyDialog({
             await api.claims.markPickedUp(claimId, code);
             setState("success");
             toast.success("Pickup verified successfully!");
+            addNotification(
+                "Pickup Verified",
+                "You have picked up the donation. Head to delivery!",
+                "info"
+            );
 
             // Auto-close after success animation
             setTimeout(() => {
@@ -112,7 +119,7 @@ export function PickupVerifyDialog({
                 setState("input");
             }, 600);
         }
-    }, [code, claimId, onOpenChange, resetState, onSuccess]);
+    }, [code, claimId, onOpenChange, resetState, onSuccess, addNotification]);
 
     const handleCodeComplete = useCallback(
         (value: string) => {

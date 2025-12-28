@@ -12,6 +12,7 @@ import { api } from "@/lib/api";
 import type { ApiError } from "@/lib/api";
 import type { Donation } from "@/types/donation";
 import { cn } from "@/lib/utils";
+import { useNotifications } from "@/context/NotificationContext";
 
 interface ClaimButtonProps {
     /** The donation to claim */
@@ -50,6 +51,7 @@ export function ClaimButton({
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccessDialog, setShowSuccessDialog] = useState(false);
     const [pickupCode, setPickupCode] = useState<string>("");
+    const { addNotification } = useNotifications();
 
     /**
      * Handle claim action with proper error handling
@@ -92,6 +94,12 @@ export function ClaimButton({
             toast.success("Donation claimed successfully!", {
                 description: "Check your claims to view pickup details.",
             });
+
+            addNotification(
+                "Donation Claimed",
+                "You have successfully claimed this donation.",
+                "success"
+            );
         } catch (error) {
             const apiError = error as ApiError;
             const status = apiError?.status ?? 0;
@@ -121,7 +129,7 @@ export function ClaimButton({
         } finally {
             setIsLoading(false);
         }
-    }, [donation.id, disabled, isLoading, onClaimSuccess, router]);
+    }, [donation.id, disabled, isLoading, onClaimSuccess, router, addNotification]);
 
     // Handle navigation to claim details
     const handleViewClaim = useCallback(() => {

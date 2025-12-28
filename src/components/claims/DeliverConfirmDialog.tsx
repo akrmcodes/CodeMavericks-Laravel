@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { api, type ApiError } from "@/lib/api";
 import { DELIVERY_NOTES_MAX_LENGTH } from "@/lib/validators/claim";
+import { useNotifications } from "@/context/NotificationContext";
 
 interface DeliverConfirmDialogProps {
     claimId: number;
@@ -53,6 +54,7 @@ export function DeliverConfirmDialog({
     const [notes, setNotes] = useState("");
     const [state, setState] = useState<DialogState>("form");
     const [errorMessage, setErrorMessage] = useState<string>("");
+    const { addNotification } = useNotifications();
 
     const resetState = useCallback(() => {
         setNotes("");
@@ -80,6 +82,11 @@ export function DeliverConfirmDialog({
             await api.claims.markDelivered(claimId, notes.trim() || undefined);
             setState("success");
             toast.success("Delivery confirmed! Thank you for your help.");
+            addNotification(
+                "Mission Complete! 🎉",
+                "Donation delivered successfully. +Impact Points earned.",
+                "success"
+            );
 
             // Auto-close after celebration
             setTimeout(() => {
@@ -103,7 +110,7 @@ export function DeliverConfirmDialog({
                 });
             }
         }
-    }, [claimId, notes, onOpenChange, resetState, onSuccess]);
+    }, [claimId, notes, onOpenChange, resetState, onSuccess, addNotification]);
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>

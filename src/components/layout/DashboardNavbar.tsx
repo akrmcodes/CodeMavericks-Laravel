@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { UserNav } from "@/components/layout/UserNav";
+import { NotificationBell } from "@/components/notifications";
 
 const buildBreadcrumbs = (pathname: string) => {
     const segments = pathname.split("/").filter(Boolean);
@@ -58,7 +59,12 @@ export function DashboardNavbar() {
                     </BreadcrumbList>
                 </Breadcrumb>
             </div>
-            <UserNav />
+
+            {/* Right side: Notifications & User */}
+            <div className="flex items-center gap-2">
+                <NotificationBell />
+                <UserNav />
+            </div>
         </header>
     );
 }

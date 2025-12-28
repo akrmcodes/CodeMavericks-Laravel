@@ -650,44 +650,35 @@ src/
 
 #### Task Checklist
 
-**6.1 API Module**
+**6.1 State Management (The Engine)**
 
-- [ ] Create `lib/api/modules/notifications.ts`
-- [ ] Implement `list()` method
-- [ ] Implement `markRead(id)` method
-- [ ] Add types matching contract's notification structure
+- [✅] Create `context/NotificationContext.tsx`
+- [✅] Implement `NotificationProvider` with local state
+- [✅] Create actions: `addNotification`, `markAsRead`, `clearAll`
+- [✅] Define Notification types (`success`, `info`, `warning`, `error`)
+- [✅] Implement Mock Data injection (Pre-filled notifications on load)
 
-**6.2 Type Definitions**
+**6.2 Animated Components (The UI)**
 
-- [ ] Create `types/notification.ts`
-- [ ] Define notification type discriminators
-- [ ] Create notification data type (donation_id, message, etc.)
+- [✅] Create `NotificationBell.tsx` with Shake/Ring animation
+- [✅] Implement "Pulse" effect for unread badge
+- [✅] Create `NotificationItem.tsx` with slide-in Framer Motion effects
+- [✅] Build `NotificationList.tsx` (Dropdown) with Glassmorphism style
+- [✅] Add "Empty State" illustration for zero notifications
 
-**6.3 Notification Components**
+**6.3 Integration & Feedback (The Nerves)**
 
-- [ ] Create `NotificationBell.tsx` for navbar
-- [ ] Display unread count badge
-- [ ] Build dropdown with recent notifications
-- [ ] Create `NotificationList.tsx` for full page
-- [ ] Implement notification item with icon based on type
-- [ ] Add "Mark as read" functionality
-- [ ] Create "Mark all as read" action
+- [✅] Integrate `sonner` (Toast) with Context for dual-feedback
+- [✅] Wire up **Donation Creation** success to trigger notification
+- [✅] Wire up **Claim Action** to trigger notification
+- [✅] Wire up **Pickup Verification** to trigger notification
+- [✅] Wire up **Delivery Confirmation** to trigger notification (+Impact Points)
+- [✅] Wire up **Cancellation** to trigger warning notification
 
-**6.4 Notification Center Page**
+**6.4 Simulation Tools**
 
-- [ ] Create `app/notifications/page.tsx`
-- [ ] Display all notifications with pagination
-- [ ] Filter by read/unread status
-- [ ] Show notification timestamp
-- [ ] Link to relevant resource (donation/claim)
-- [ ] Add empty state
-
-**6.5 Real-time Updates (Enhancement)**
-
-- [ ] Implement polling for new notifications (every 30s)
-- [ ] Create notification toast for new items
-- [ ] Add Framer Motion entrance animation
-- [ ] Consider WebSocket for future (out of scope per overview)
+- [✅] Create `lib/simulation.ts` helper
+- [✅] Implement `simulateActivity` function for testing
 
 ---
 

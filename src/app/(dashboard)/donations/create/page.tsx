@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { donationSchema, type DonationFormValues } from "@/lib/validators/donation";
 import { FoodType } from "@/types/donation";
+import { useNotifications } from "@/context/NotificationContext";
 
 const TOTAL_STEPS = 3;
 
@@ -27,6 +28,7 @@ type DonationFormInput = z.input<typeof donationSchema>;
 export default function Page() {
     const [step, setStep] = useState<number>(1);
     const router = useRouter();
+    const { addNotification } = useNotifications();
 
     const formMethods = useForm<DonationFormInput, undefined, DonationFormValues>({
         resolver: zodResolver(donationSchema),
@@ -60,6 +62,11 @@ export default function Page() {
                 longitude: 0,
             });
             toast.success("Donation created successfully!");
+            addNotification(
+                "Donation Created",
+                "Your donation is now live for volunteers.",
+                "success"
+            );
             await new Promise((resolve) => setTimeout(resolve, 1000));
             router.push("/donations");
         } catch (error) {
