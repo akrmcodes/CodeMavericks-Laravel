@@ -104,14 +104,25 @@ export function calculateProfileCompletion(user: {
     phone?: string | null;
     latitude?: number | null;
     longitude?: number | null;
+    avatar_url?: string | null;
 }): ProfileCompletion {
+    const hasName = Boolean(user.name && user.name.trim().length > 0);
+    const hasPhone = Boolean(user.phone && String(user.phone).trim().length > 0);
+    const hasLocation =
+        user.latitude !== null &&
+        user.latitude !== undefined &&
+        user.longitude !== null &&
+        user.longitude !== undefined;
+    const hasAvatar = Boolean(user.avatar_url && user.avatar_url.trim().length > 0);
+
     const fields = [
-        { key: "name", label: "Name", value: user.name },
-        { key: "phone", label: "Phone number", value: user.phone },
-        { key: "location", label: "Location", value: user.latitude && user.longitude },
+        { key: "name", label: "Name", value: hasName },
+        { key: "phone", label: "Phone number", value: hasPhone },
+        { key: "location", label: "Location", value: hasLocation },
+        { key: "avatar", label: "Avatar", value: hasAvatar },
     ];
 
-    const completedFields = fields.filter((f) => !!f.value);
+    const completedFields = fields.filter((f) => f.value);
     const missingFields = fields.filter((f) => !f.value).map((f) => f.label);
     const percentage = Math.round((completedFields.length / fields.length) * 100);
 

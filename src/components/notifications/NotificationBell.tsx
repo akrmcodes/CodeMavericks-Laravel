@@ -121,8 +121,21 @@ const popoverVariants = {
 export function NotificationBell() {
     const { unreadCount } = useNotifications();
     const [isShaking, setIsShaking] = useState(false);
-    const previousCountRef = useRef(unreadCount);
+    const previousCountRef = useRef(0);
     const [isOpen, setIsOpen] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    // Ensure consistent rendering between server and client
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    // Sync previousCountRef after mount
+    useEffect(() => {
+        if (isMounted) {
+            previousCountRef.current = unreadCount;
+        }
+    }, [isMounted, unreadCount]);
 
     // Trigger shake animation when new notifications arrive
     useEffect(() => {
@@ -159,11 +172,11 @@ export function NotificationBell() {
                         "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                         "transition-colors duration-200"
                     )}
-                    aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+                    aria-label={`Notifications${isMounted && unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
                 >
                     {/* Glow effect behind the bell when there are unread notifications */}
                     <AnimatePresence>
-                        {unreadCount > 0 && (
+                        {isMounted && unreadCount > 0 && (
                             <motion.div
                                 variants={glowVariants}
                                 initial={{ opacity: 0 }}
@@ -182,16 +195,17 @@ export function NotificationBell() {
                         <Bell
                             className={cn(
                                 "size-5 transition-colors duration-200",
-                                unreadCount > 0
+                                isMounted && unreadCount > 0
                                     ? "text-primary"
                                     : "text-slate-600"
                             )}
+                            aria-hidden="true"
                         />
                     </motion.div>
 
                     {/* Unread Badge */}
                     <AnimatePresence>
-                        {unreadCount > 0 && (
+                        {isMounted && unreadCount > 0 && (
                             <motion.div
                                 variants={badgeVariants}
                                 initial="hidden"

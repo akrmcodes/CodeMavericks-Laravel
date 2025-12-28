@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
     Lock,
@@ -7,8 +8,14 @@ import {
     Shield,
     AlertTriangle,
     Trash2,
+    Bell,
+    Moon,
+    Eye,
+    ShieldCheck,
+    Sparkles,
     ChevronRight,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -59,6 +66,35 @@ interface SettingsItemProps {
     disabled?: boolean;
 }
 
+interface ToggleProps {
+    checked: boolean;
+    onChange: () => void;
+    label: string;
+}
+
+function Toggle({ checked, onChange, label }: ToggleProps) {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            aria-label={label}
+            onClick={onChange}
+            className={cn(
+                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                checked ? "bg-emerald-500" : "bg-slate-200"
+            )}
+        >
+            <span
+                className={cn(
+                    "inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform",
+                    checked ? "translate-x-5" : "translate-x-1"
+                )}
+            />
+        </button>
+    );
+}
+
 function SettingsItem({
     icon: Icon,
     title,
@@ -70,16 +106,18 @@ function SettingsItem({
     disabled = false,
 }: SettingsItemProps) {
     return (
-        <motion.button
+        <motion.div
             variants={itemVariants}
-            onClick={onClick}
-            disabled={disabled}
+            onClick={disabled ? undefined : onClick}
             className={cn(
                 "flex w-full items-center gap-4 rounded-xl p-4 text-left transition-colors",
                 disabled
                     ? "cursor-not-allowed opacity-50"
                     : "hover:bg-slate-50 cursor-pointer"
             )}
+            role={onClick && !disabled ? "button" : undefined}
+            tabIndex={onClick && !disabled ? 0 : -1}
+            aria-disabled={disabled || undefined}
         >
             <div
                 className={cn(
@@ -94,7 +132,7 @@ function SettingsItem({
                 <p className="text-sm text-slate-500">{description}</p>
             </div>
             {action || <ChevronRight className="size-5 shrink-0 text-slate-400" />}
-        </motion.button>
+        </motion.div>
     );
 }
 
@@ -103,25 +141,33 @@ function SettingsItem({
 // =============================================================================
 
 export function AccountSettings() {
-    // Placeholder handlers - these would integrate with actual functionality
-    const handleChangePassword = () => {
-        // TODO: Implement password change modal
-        alert("Password change coming soon!");
+    const [settings, setSettings] = useState({
+        darkMode: false,
+        emailAlerts: true,
+        pushAlerts: true,
+        smsAlerts: false,
+        profilePublic: true,
+        shareActivity: true,
+    });
+
+    const saveToast = (message: string) =>
+        toast.success("Settings saved (Demo)", { description: message });
+
+    const toggleSetting = (key: keyof typeof settings, label: string) => {
+        setSettings((prev) => {
+            const next = { ...prev, [key]: !prev[key] };
+            saveToast(`${label} ${!prev[key] ? "enabled" : "disabled"}`);
+            return next;
+        });
     };
 
-    const handleTwoFactor = () => {
-        // TODO: Implement 2FA setup
-        alert("Two-factor authentication coming soon!");
-    };
-
-    const handleDeleteAccount = () => {
-        // TODO: Implement account deletion flow
-        alert("Account deletion requires confirmation. Coming soon!");
+    const handleSensitiveAction = (action: string) => {
+        saveToast(`${action} (Demo)`);
     };
 
     return (
         <div className="space-y-6">
-            {/* Security Settings */}
+            {/* Appearance & Theme */}
             <motion.div
                 variants={cardVariants}
                 initial="hidden"
@@ -130,36 +176,157 @@ export function AccountSettings() {
                 <Card className="border-slate-200/60 shadow-md">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Shield className="size-5 text-blue-600" />
-                            Security Settings
+                            <Moon className="size-5 text-emerald-600" />
+                            Appearance
                         </CardTitle>
                         <CardDescription>
-                            Manage your account security and authentication options
+                            Personalize your experience for this demo
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-1">
                         <SettingsItem
-                            icon={Key}
-                            title="Change Password"
-                            description="Update your account password"
+                            icon={Moon}
+                            title="Dark Mode"
+                            description="Switch between light and dark themes"
+                            iconBg="bg-emerald-100"
+                            iconColor="text-emerald-600"
+                            action={
+                                <Toggle
+                                    checked={settings.darkMode}
+                                    onChange={() => toggleSetting("darkMode", "Dark mode")}
+                                    label="Dark mode"
+                                />
+                            }
+                        />
+                        <Separator className="my-2" />
+                        <SettingsItem
+                            icon={Sparkles}
+                            title="Share Activity"
+                            description="Show impact badges across the dashboard"
                             iconBg="bg-blue-100"
                             iconColor="text-blue-600"
-                            onClick={handleChangePassword}
-                        />
-
-                        <Separator className="my-2" />
-
-                        <SettingsItem
-                            icon={Lock}
-                            title="Two-Factor Authentication"
-                            description="Add an extra layer of security"
-                            iconBg="bg-violet-100"
-                            iconColor="text-violet-600"
-                            onClick={handleTwoFactor}
                             action={
-                                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
-                                    Recommended
-                                </span>
+                                <Toggle
+                                    checked={settings.shareActivity}
+                                    onChange={() => toggleSetting("shareActivity", "Activity sharing")}
+                                    label="Share activity"
+                                />
+                            }
+                        />
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            {/* Notifications */}
+            <motion.div
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                <Card className="border-slate-200/60 shadow-md">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Bell className="size-5 text-amber-600" />
+                            Notifications
+                        </CardTitle>
+                        <CardDescription>
+                            Control how you receive updates in this demo
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-1">
+                        <SettingsItem
+                            icon={Bell}
+                            title="Email Alerts"
+                            description="Donation updates and weekly summaries"
+                            iconBg="bg-amber-100"
+                            iconColor="text-amber-700"
+                            action={
+                                <Toggle
+                                    checked={settings.emailAlerts}
+                                    onChange={() => toggleSetting("emailAlerts", "Email alerts")}
+                                    label="Email alerts"
+                                />
+                            }
+                        />
+                        <Separator className="my-2" />
+                        <SettingsItem
+                            icon={Shield}
+                            title="Push Notifications"
+                            description="Real-time status changes"
+                            iconBg="bg-emerald-100"
+                            iconColor="text-emerald-700"
+                            action={
+                                <Toggle
+                                    checked={settings.pushAlerts}
+                                    onChange={() => toggleSetting("pushAlerts", "Push notifications")}
+                                    label="Push notifications"
+                                />
+                            }
+                        />
+                        <Separator className="my-2" />
+                        <SettingsItem
+                            icon={Key}
+                            title="SMS Backup"
+                            description="Only for critical delivery updates"
+                            iconBg="bg-blue-100"
+                            iconColor="text-blue-700"
+                            action={
+                                <Toggle
+                                    checked={settings.smsAlerts}
+                                    onChange={() => toggleSetting("smsAlerts", "SMS alerts")}
+                                    label="SMS alerts"
+                                />
+                            }
+                        />
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            {/* Privacy & Safety */}
+            <motion.div
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                transition={{ delay: 0.05 }}
+            >
+                <Card className="border-slate-200/60 shadow-md">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <ShieldCheck className="size-5 text-slate-700" />
+                            Privacy & Safety
+                        </CardTitle>
+                        <CardDescription>
+                            Control what others can see in this demo
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-1">
+                        <SettingsItem
+                            icon={Eye}
+                            title="Public Profile"
+                            description="Show your impact stats on leaderboards"
+                            iconBg="bg-slate-100"
+                            iconColor="text-slate-700"
+                            action={
+                                <Toggle
+                                    checked={settings.profilePublic}
+                                    onChange={() => toggleSetting("profilePublic", "Public profile")}
+                                    label="Public profile"
+                                />
+                            }
+                        />
+                        <Separator className="my-2" />
+                        <SettingsItem
+                            icon={Shield}
+                            title="Privacy Lock"
+                            description="Hide contact details in listings"
+                            iconBg="bg-purple-100"
+                            iconColor="text-purple-700"
+                            action={
+                                <Toggle
+                                    checked={!settings.profilePublic}
+                                    onChange={() => toggleSetting("profilePublic", "Privacy lock")}
+                                    label="Privacy lock"
+                                />
                             }
                         />
                     </CardContent>
@@ -180,7 +347,7 @@ export function AccountSettings() {
                             Danger Zone
                         </CardTitle>
                         <CardDescription className="text-red-600/80">
-                            Irreversible actions that affect your account
+                            Irreversible actions (demo only)
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -196,7 +363,7 @@ export function AccountSettings() {
                                 </div>
                                 <Button
                                     variant="outline"
-                                    onClick={handleDeleteAccount}
+                                    onClick={() => handleSensitiveAction("Delete account")}
                                     className="shrink-0 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-400"
                                 >
                                     <Trash2 className="mr-2 size-4" />

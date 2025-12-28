@@ -8,8 +8,13 @@ import {
     Phone,
     MapPin,
     Package,
-    HandHeart,
+    Truck,
     Scale,
+    Utensils,
+    Clock,
+    DollarSign,
+    Calendar,
+    Zap,
     CheckCircle2,
     XCircle,
 } from "lucide-react";
@@ -17,6 +22,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { User } from "@/lib/api";
+import {
+    getPrimaryRole,
+    getSimulatedStats,
+    getStatsForDisplay,
+} from "@/lib/utils/profile-simulation";
 
 // Dynamic import for the map (SSR disabled)
 const MapContainer = dynamic(
@@ -40,6 +50,18 @@ interface ProfileStatsCardsProps {
     user: User;
     className?: string;
 }
+
+const iconMap = {
+    Package,
+    Truck,
+    Scale,
+    Utensils,
+    Clock,
+    MapPin,
+    DollarSign,
+    Calendar,
+    Zap,
+};
 
 interface StatCardProps {
     icon: React.ElementType;
@@ -222,7 +244,7 @@ function LocationCard({
                     {hasLocation ? (
                         <div className="relative h-40">
                             <MapContainer
-                                center={[user.latitude!, user.longitude!]}
+                                center={[Number(user.latitude), Number(user.longitude)]}
                                 zoom={13}
                                 scrollWheelZoom={false}
                                 dragging={false}
@@ -233,11 +255,11 @@ function LocationCard({
                                 <TileLayer
                                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                 />
-                                <Marker position={[user.latitude!, user.longitude!]} />
+                                <Marker position={[Number(user.latitude), Number(user.longitude)]} />
                             </MapContainer>
                             <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-white/90 to-transparent p-3">
                                 <p className="text-xs font-medium text-slate-600">
-                                    {user.latitude?.toFixed(4)}, {user.longitude?.toFixed(4)}
+                                    {Number(user.latitude).toFixed(4)}, {Number(user.longitude).toFixed(4)}
                                 </p>
                             </div>
                         </div>
@@ -263,50 +285,34 @@ function LocationCard({
 // =============================================================================
 
 export function ProfileStatsCards({ user, className }: ProfileStatsCardsProps) {
-    // Mock stats - in production these would come from the API
-    const stats = useMemo(
-        () => ({
-            donationsCreated: 12,
-            claimsFulfilled: 8,
-            totalKgSaved: 45.5,
-        }),
-        []
-    );
+    const roleStats = useMemo(() => getSimulatedStats(user), [user]);
+    const statCards = useMemo(() => getStatsForDisplay(roleStats), [roleStats]);
+    const role = useMemo(() => getPrimaryRole(user), [user]);
 
     return (
         <div className={cn("space-y-4", className)}>
             {/* Stats Grid */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <MiniStatCard
-                    icon={Package}
-                    label="Donations"
-                    value={stats.donationsCreated}
-                    description="Food items shared"
-                    iconColor="text-emerald-600"
-                    delay={0}
-                />
-                <MiniStatCard
-                    icon={HandHeart}
-                    label="Claims"
-                    value={stats.claimsFulfilled}
-                    description="Successfully delivered"
-                    iconColor="text-blue-600"
-                    delay={1}
-                />
-                <MiniStatCard
-                    icon={Scale}
-                    label="Food Saved"
-                    value={`${stats.totalKgSaved} kg`}
-                    description="From going to waste"
-                    iconColor="text-violet-600"
-                    delay={2}
-                />
+                {statCards.map((stat, idx) => {
+                    const Icon = iconMap[stat.icon];
+                    return (
+                        <MiniStatCard
+                            key={stat.label}
+                            icon={Icon}
+                            label={stat.label}
+                            value={stat.value}
+                            description={stat.description}
+                            iconColor={stat.iconColor}
+                            delay={idx}
+                        />
+                    );
+                })}
             </div>
 
             {/* Contact & Location Grid */}
             <div className="grid gap-4 sm:grid-cols-2">
                 <ContactCard user={user} delay={3} />
-                <LocationCard user={user} delay={4} />
+                <LocationCard user={user} delay={statCards.length >= 3 ? 4 : 2} />
             </div>
         </div>
     );

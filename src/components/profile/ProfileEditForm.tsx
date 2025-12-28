@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { z } from "zod";
+import dynamic from "next/dynamic";
 import {
     User,
     Phone,
@@ -34,7 +35,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { LocationPicker } from "@/components/map/LocationPicker";
+import { MapSkeleton } from "@/components/map/MapSkeleton";
+
+// =============================================================================
+// Dynamic Import: LocationPicker (SSR Disabled)
+// Leaflet requires `window` which doesn't exist on the server.
+// =============================================================================
+const LocationPicker = dynamic(
+    () => import("@/components/map/LocationPicker").then((mod) => mod.LocationPicker),
+    {
+        ssr: false,
+        loading: () => <MapSkeleton height="250px" showControls={false} />,
+    }
+);
 import { api, type User as UserType } from "@/lib/api";
 import { profileSchema, type ProfileFormValues } from "@/types/profile";
 import { cn } from "@/lib/utils";
@@ -327,8 +340,8 @@ export function ProfileEditForm({
                                             <>
                                                 <Check className="size-4" />
                                                 <span>
-                                                    Location set: {latitude?.toFixed(4)},{" "}
-                                                    {longitude?.toFixed(4)}
+                                                    Location set: {Number(latitude).toFixed(4)}, {" "}
+                                                    {Number(longitude).toFixed(4)}
                                                 </span>
                                             </>
                                         ) : (
@@ -342,8 +355,8 @@ export function ProfileEditForm({
                                     {/* Location Picker */}
                                     <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
                                         <LocationPicker
-                                            latitude={latitude ?? undefined}
-                                            longitude={longitude ?? undefined}
+                                            latitude={latitude ?? null}
+                                            longitude={longitude ?? null}
                                             onLocationChange={handleLocationChange}
                                             height="250px"
                                         />

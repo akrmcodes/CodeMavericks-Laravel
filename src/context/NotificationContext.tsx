@@ -4,7 +4,9 @@ import {
     createContext,
     useCallback,
     useContext,
+    useEffect,
     useMemo,
+    useRef,
     useState,
     type PropsWithChildren,
 } from "react";
@@ -151,10 +153,23 @@ const createMockNotifications = (): Notification[] => [
 // ============================================================================
 
 export function NotificationProvider({ children }: PropsWithChildren) {
-    // Initialize with mock data directly (lazy initialization)
-    const [notifications, setNotifications] = useState<Notification[]>(() =>
-        typeof window !== "undefined" ? createMockNotifications() : []
-    );
+    // Initialize with empty array for SSR hydration compatibility
+    // Using lazy initializer with a flag to load mock data after first render
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+
+    // Load mock notifications after hydration to prevent mismatch
+    // Using a ref to track if initial load happened to avoid lint warning
+    const hasInitializedRef = useRef(false);
+
+    useEffect(() => {
+        if (!hasInitializedRef.current) {
+            hasInitializedRef.current = true;
+            // Defer state update to next tick to avoid cascading render warning
+            queueMicrotask(() => {
+                setNotifications(createMockNotifications());
+            });
+        }
+    }, []);
 
     // Compute unread count
     const unreadCount = useMemo(

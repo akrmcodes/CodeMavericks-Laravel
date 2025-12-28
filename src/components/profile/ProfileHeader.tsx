@@ -128,6 +128,10 @@ export function ProfileHeader({ user, onEditClick }: ProfileHeaderProps) {
         [user]
     );
 
+    const completionHint = completion.missingFields.length
+        ? completion.missingFields.join(", ")
+        : "Add more details to stand out";
+
     return (
         <motion.div
             variants={containerVariants}
@@ -272,7 +276,7 @@ export function ProfileHeader({ user, onEditClick }: ProfileHeaderProps) {
                             />
                         </div>
                         <p className="mt-2 text-xs text-slate-500">
-                            Complete your profile: {completion.missingFields.join(", ")}
+                            Complete your profile: {completionHint}
                         </p>
                     </motion.div>
                 )}

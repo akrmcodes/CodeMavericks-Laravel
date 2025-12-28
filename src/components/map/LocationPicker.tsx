@@ -193,6 +193,11 @@ export function LocationPicker({
     placeholder = "Click on the map or drag the marker to set pickup location",
     disabled = false,
 }: LocationPickerProps) {
+    // Parse incoming values defensively (may arrive as string/null)
+    const latVal = latitude === null || latitude === undefined ? NaN : Number(latitude);
+    const lngVal = longitude === null || longitude === undefined ? NaN : Number(longitude);
+    const hasValidCoords = Number.isFinite(latVal) && Number.isFinite(lngVal);
+
     // Use the geolocation hook for "Use My Location" functionality
     const {
         coordinates: userCoords,
@@ -201,18 +206,16 @@ export function LocationPicker({
     } = useGeolocation({ autoFetch: false });
 
     // Track if a location has been explicitly selected
-    const [hasSelection, setHasSelection] = useState(
-        !!(latitude && longitude)
-    );
+    const [hasSelection, setHasSelection] = useState(hasValidCoords);
 
     // Current marker position
     const markerPosition = useMemo((): [number, number] => {
-        if (latitude && longitude) {
-            return [latitude, longitude];
+        if (hasValidCoords) {
+            return [latVal, lngVal];
         }
         // Default to Cairo center
         return [DEFAULT_LOCATION.latitude, DEFAULT_LOCATION.longitude];
-    }, [latitude, longitude]);
+    }, [hasValidCoords, latVal, lngVal]);
 
     // Map center (only for initial view)
     const [mapCenter, setMapCenter] = useState<[number, number]>(markerPosition);
@@ -257,7 +260,7 @@ export function LocationPicker({
 
     // Sync with external changes - use derived state pattern
     // Note: This is intentional as we're syncing with external props
-    const shouldHaveSelection = !!(latitude && longitude);
+    const shouldHaveSelection = hasValidCoords;
     if (shouldHaveSelection !== hasSelection && shouldHaveSelection) {
         setHasSelection(true);
     }
@@ -344,14 +347,19 @@ export function LocationPicker({
             </div>
 
             {/* Coordinate display */}
-            {hasSelection && latitude && longitude && (
+            {hasSelection && hasValidCoords ? (
                 <div className="flex items-center gap-4 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
                     <span className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
                         Selected Location:
                     </span>
-                    <span>Lat: {latitude.toFixed(6)}</span>
-                    <span>Long: {longitude.toFixed(6)}</span>
+                    <span>Lat: {latVal.toFixed(6)}</span>
+                    <span>Long: {lngVal.toFixed(6)}</span>
+                </div>
+            ) : (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+                    <MapPin className="h-3 w-3" />
+                    <span>No location selected</span>
                 </div>
             )}
         </div>

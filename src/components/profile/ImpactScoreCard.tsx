@@ -2,9 +2,10 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, TrendingUp, Award, Zap } from "lucide-react";
+import { Sparkles, Award, Zap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { getImpactLevel } from "@/lib/utils/profile-simulation";
 
 // =============================================================================
 // Props
@@ -84,54 +85,12 @@ const orbVariants = {
 };
 
 // =============================================================================
-// Helper Functions
-// =============================================================================
-
-function getScoreLevel(score: number): {
-    level: string;
-    color: string;
-    bgColor: string;
-    description: string;
-} {
-    if (score >= 1000) {
-        return {
-            level: "Legend",
-            color: "text-amber-500",
-            bgColor: "from-amber-500/20 to-orange-500/20",
-            description: "A true hero in the fight against hunger",
-        };
-    }
-    if (score >= 500) {
-        return {
-            level: "Champion",
-            color: "text-violet-500",
-            bgColor: "from-violet-500/20 to-purple-500/20",
-            description: "Making a significant impact in your community",
-        };
-    }
-    if (score >= 100) {
-        return {
-            level: "Rising Star",
-            color: "text-emerald-500",
-            bgColor: "from-emerald-500/20 to-teal-500/20",
-            description: "Great progress on your food rescue journey",
-        };
-    }
-    return {
-        level: "Newcomer",
-        color: "text-blue-500",
-        bgColor: "from-blue-500/20 to-sky-500/20",
-        description: "Welcome! Every action counts",
-    };
-}
-
-// =============================================================================
 // Component
 // =============================================================================
 
 export function ImpactScoreCard({ score, className }: ImpactScoreCardProps) {
-    const { level, color, bgColor, description } = useMemo(
-        () => getScoreLevel(score),
+    const { level, color, bgColor, description, progress, nextLevelAt } = useMemo(
+        () => getImpactLevel(score),
         [score]
     );
 
@@ -250,7 +209,7 @@ export function ImpactScoreCard({ score, className }: ImpactScoreCardProps) {
                             className="flex items-center gap-2 text-slate-600"
                         >
                             <Zap className="size-5" />
-                            <span className="text-lg font-semibold">Impact Points</span>
+                            <span className="text-lg font-semibold">Impact Score</span>
                         </motion.div>
 
                         {/* Description */}
@@ -264,15 +223,32 @@ export function ImpactScoreCard({ score, className }: ImpactScoreCardProps) {
                         </motion.p>
 
                         {/* Progress hint */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.6 }}
-                            className="mt-4 flex items-center gap-1.5 text-xs text-slate-400"
-                        >
-                            <TrendingUp className="size-3.5" />
-                            <span>Keep donating to increase your score!</span>
-                        </motion.div>
+                        {nextLevelAt !== null && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.6 }}
+                                className="mt-4 w-full"
+                            >
+                                <div className="mb-1 flex items-center justify-between text-xs font-semibold text-slate-500">
+                                    <span>Progress to next level</span>
+                                    <span>{progress}%</span>
+                                </div>
+                                <div className="h-2 rounded-full bg-white/60 overflow-hidden border border-white/60">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${progress}%` }}
+                                        transition={{ duration: 0.8, ease: "easeOut" }}
+                                        className="h-full bg-linear-to-r from-emerald-500 to-blue-500"
+                                    />
+                                </div>
+                                <p className="mt-2 text-xs text-slate-500">
+                                    {nextLevelAt - score > 0
+                                        ? `${nextLevelAt - score} points to reach the next tier`
+                                        : "You're at the top tier—keep shining!"}
+                                </p>
+                            </motion.div>
+                        )}
                     </div>
                 </CardContent>
             </Card>
