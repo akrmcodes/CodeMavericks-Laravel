@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { MapPin, ShoppingBag, Soup, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
@@ -17,26 +18,32 @@ import { StatCard } from "@/components/dashboard/shared/StatCard";
 import { containerVariants, itemVariants } from "@/components/dashboard/shared/variants";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
+import {
+    getSimulatedStats,
+    type RecipientStats,
+} from "@/lib/utils/profile-simulation";
 
-const stats = [
-    { title: "Nearby Donations", value: "8", icon: MapPin },
-    { title: "My Orders", value: "2", icon: ShoppingBag },
-];
+/**
+ * Generate deterministic meals data based on meals received
+ */
+function generateMealsData(mealsReceived: number) {
+    const weeklyAvg = Math.max(1, mealsReceived / 4);
+    return [
+        { day: "Mon", meals: Math.round(weeklyAvg * 0.7) },
+        { day: "Tue", meals: Math.round(weeklyAvg * 0.5) },
+        { day: "Wed", meals: Math.round(weeklyAvg * 1.2) },
+        { day: "Thu", meals: Math.round(weeklyAvg * 0.8) },
+        { day: "Fri", meals: Math.round(weeklyAvg * 1.5) },
+        { day: "Sat", meals: Math.round(weeklyAvg * 0.6) },
+        { day: "Sun", meals: Math.round(weeklyAvg * 1.0) },
+    ];
+}
 
 const nearbyItems = [
     { name: "Fresh Bread", place: "Sunrise Bakery", distance: "0.5 km" },
     { name: "Vegetable Box", place: "Green Market", distance: "1.1 km" },
     { name: "Hot Meals", place: "Community Kitchen", distance: "1.4 km" },
-];
-
-const mealsData = [
-    { day: "Mon", meals: 1 },
-    { day: "Tue", meals: 0 },
-    { day: "Wed", meals: 2 },
-    { day: "Thu", meals: 1 },
-    { day: "Fri", meals: 3 },
-    { day: "Sat", meals: 1 },
-    { day: "Sun", meals: 2 },
 ];
 
 type StatusTooltipProps = TooltipProps<number, string> & {
@@ -58,18 +65,43 @@ function StatusTooltip({ active, payload }: StatusTooltipProps) {
 }
 
 export function RecipientDashboard() {
+    const { user } = useAuth();
+
+    // Get deterministic stats from the simulation engine
+    const stats = useMemo(() => {
+        if (!user) return null;
+        const result = getSimulatedStats(user);
+        return result.role === "recipient" ? result as RecipientStats : null;
+    }, [user]);
+
+    const mealsData = useMemo(() => {
+        return generateMealsData(stats?.mealsReceived ?? 1);
+    }, [stats?.mealsReceived]);
+
+    if (!stats) {
+        return null;
+    }
+
     const hasNearby = nearbyItems.length > 0;
+
+    // Generate stats based on simulation data
+    const displayStats = [
+        { title: "Nearby Donations", value: String(Math.min(nearbyItems.length + 5, 12)), icon: MapPin },
+        { title: "Meals Received", value: stats.mealsReceived.toString(), icon: ShoppingBag },
+    ];
 
     return (
         <motion.div initial="hidden" animate="show" variants={containerVariants} className="space-y-6">
             <motion.div variants={itemVariants} className="rounded-2xl bg-gradient-to-r from-orange-100 via-white to-orange-50 p-5 shadow-sm ring-1 ring-orange-100/60">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-700">ZeroHunger</p>
                 <h2 className="mt-2 text-2xl font-bold text-slate-900">Find food nearby</h2>
-                <p className="text-sm text-slate-700">Safe, dignified access to surplus food in your area.</p>
+                <p className="text-sm text-slate-700">
+                    Safe, dignified access to surplus food. You&apos;ve saved ~${stats.savingsEstimate} so far!
+                </p>
             </motion.div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-                {stats.map((stat) => (
+                {displayStats.map((stat) => (
                     <motion.div key={stat.title} variants={itemVariants}>
                         <StatCard
                             title={stat.title}

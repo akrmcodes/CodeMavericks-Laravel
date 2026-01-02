@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, MapPin, Navigation, Scale, Search } from "lucide-react";
 import {
@@ -17,22 +18,27 @@ import { StatCard } from "@/components/dashboard/shared/StatCard";
 import { containerVariants, itemVariants } from "@/components/dashboard/shared/variants";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
+import {
+    getSimulatedStats,
+    type VolunteerStats,
+} from "@/lib/utils/profile-simulation";
 
-const stats = [
-    { title: "Active Claims", value: "3", helper: "2 pickups today", icon: MapPin, accent: "text-blue-700 bg-blue-100" },
-    { title: "Completed Deliveries", value: "128", helper: "+6 this week", icon: CheckCircle, accent: "text-emerald-700 bg-emerald-100" },
-    { title: "Total Impact", value: "6,450 kg", helper: "Food saved", icon: Scale, accent: "text-indigo-700 bg-indigo-100" },
-];
-
-const weeklyData = [
-    { day: "Mon", deliveries: 4 },
-    { day: "Tue", deliveries: 6 },
-    { day: "Wed", deliveries: 5 },
-    { day: "Thu", deliveries: 7 },
-    { day: "Fri", deliveries: 3 },
-    { day: "Sat", deliveries: 8 },
-    { day: "Sun", deliveries: 4 },
-];
+/**
+ * Generate deterministic weekly data based on deliveries count
+ */
+function generateWeeklyData(deliveries: number) {
+    const baseMultiplier = Math.max(1, deliveries / 30);
+    return [
+        { day: "Mon", deliveries: Math.round(baseMultiplier * 4) },
+        { day: "Tue", deliveries: Math.round(baseMultiplier * 6) },
+        { day: "Wed", deliveries: Math.round(baseMultiplier * 5) },
+        { day: "Thu", deliveries: Math.round(baseMultiplier * 7) },
+        { day: "Fri", deliveries: Math.round(baseMultiplier * 3) },
+        { day: "Sat", deliveries: Math.round(baseMultiplier * 8) },
+        { day: "Sun", deliveries: Math.round(baseMultiplier * 4) },
+    ];
+}
 
 type StatusTooltipProps = TooltipProps<number, string> & {
     payload?: Array<{ payload?: { day?: string; deliveries?: number } }>;
@@ -53,7 +59,52 @@ function StatusTooltip({ active, payload }: StatusTooltipProps) {
 }
 
 export function VolunteerDashboard() {
-    const hasActiveMission = true;
+    const { user } = useAuth();
+
+    // Get deterministic stats from the simulation engine
+    const stats = useMemo(() => {
+        if (!user) return null;
+        const result = getSimulatedStats(user);
+        return result.role === "volunteer" ? result as VolunteerStats : null;
+    }, [user]);
+
+    const weeklyData = useMemo(() => {
+        return generateWeeklyData(stats?.deliveries ?? 1);
+    }, [stats?.deliveries]);
+
+    if (!stats) {
+        return null;
+    }
+
+    // Calculate active claims as a portion of total deliveries
+    const activeClaims = Math.max(1, Math.floor(stats.deliveries * 0.05));
+    const thisWeekDeliveries = weeklyData.reduce((sum, d) => sum + d.deliveries, 0);
+
+    const displayStats = [
+        {
+            title: "Active Claims",
+            value: activeClaims.toString(),
+            helper: `${Math.min(activeClaims, 2)} pickups today`,
+            icon: MapPin,
+            accent: "text-blue-700 bg-blue-100",
+        },
+        {
+            title: "Completed Deliveries",
+            value: stats.deliveries.toString(),
+            helper: `+${thisWeekDeliveries} this week`,
+            icon: CheckCircle,
+            accent: "text-emerald-700 bg-emerald-100",
+        },
+        {
+            title: "Total Impact",
+            value: `${stats.kmTraveled} km`,
+            helper: `${stats.activeHours} hrs volunteered`,
+            icon: Scale,
+            accent: "text-indigo-700 bg-indigo-100",
+        },
+    ];
+
+    const hasActiveMission = activeClaims > 0;
     const mission = {
         pickup: "Sunrise Bakery",
         dropoff: "Hope Shelter",
@@ -63,7 +114,7 @@ export function VolunteerDashboard() {
     return (
         <motion.div initial="hidden" animate="show" variants={containerVariants} className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {stats.map((stat) => (
+                {displayStats.map((stat) => (
                     <motion.div key={stat.title} variants={itemVariants}>
                         <StatCard
                             title={stat.title}

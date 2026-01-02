@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { PlusCircle } from "lucide-react";
 import {
@@ -16,13 +17,12 @@ import { ActivityList } from "@/components/dashboard/shared/ActivityList";
 import { StatCard } from "@/components/dashboard/shared/StatCard";
 import { containerVariants, itemVariants } from "@/components/dashboard/shared/variants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-type Stat = {
-    title: string;
-    value: string;
-    helper: string;
-    accentClass: string;
-};
+import { useAuth } from "@/hooks/useAuth";
+import {
+    getSimulatedStats,
+    getImpactLevel,
+    type DonorStats,
+} from "@/lib/utils/profile-simulation";
 
 type StatusDatum = {
     name: string;
@@ -30,28 +30,43 @@ type StatusDatum = {
     color: string;
 };
 
+/**
+ * Generate deterministic activity items based on donation count
+ */
+function generateActivityItems(donations: number) {
+    const baseActivities = [
+        { title: "Donated fresh vegetables", time: "2h ago" },
+        { title: "Claimed by volunteer Ahmed", time: "4h ago" },
+        { title: "Delivered to Community Kitchen", time: "Yesterday" },
+        { title: "Donated fresh bread", time: "2 days ago" },
+        { title: "Pickup scheduled for tomorrow", time: "3 days ago" },
+    ];
+    // Show more activities for users with more donations
+    const activityCount = Math.min(Math.max(2, Math.floor(donations / 8)), 5);
+    return baseActivities.slice(0, activityCount);
+}
 
-const stats: Stat[] = [
-    { title: "Total Donations", value: "128", helper: "+12% vs last month", accentClass: "bg-emerald-100 text-emerald-800" },
-    { title: "Active Donations", value: "14", helper: "+2 this week", accentClass: "bg-blue-100 text-blue-800" },
-    { title: "Impact Score", value: "4,500", helper: "Level 5 Donor", accentClass: "bg-amber-100 text-amber-800" },
-];
+/**
+ * Generate deterministic status data based on donation stats
+ */
+function generateStatusData(donations: number): StatusDatum[] {
+    const pending = Math.max(1, Math.floor(donations * 0.15));
+    const claimed = Math.max(1, Math.floor(donations * 0.25));
+    const delivered = Math.max(1, donations - pending - claimed);
 
-const statusData: StatusDatum[] = [
-    { name: "Pending", value: 8, color: "#94a3b8" },
-    { name: "Claimed", value: 5, color: "#f59e0b" },
-    { name: "Delivered", value: 12, color: "#10b981" },
-];
+    return [
+        { name: "Pending", value: pending, color: "#94a3b8" },
+        { name: "Claimed", value: claimed, color: "#f59e0b" },
+        { name: "Delivered", value: delivered, color: "#10b981" },
+    ];
+}
 
-const activityItems = [
-    { title: "Donated 20 kg of Apples", time: "2h ago" },
-    { title: "Claimed by Ahmed (Volunteer)", time: "4h ago" },
-    { title: "Delivered to Community Kitchen", time: "Yesterday" },
-    { title: "Donated Fresh Bread", time: "2 days ago" },
-];
+interface ImpactRingProps {
+    progress: number;
+}
 
-function ImpactRing() {
-    const progress = 0.78; // mock 78%
+function ImpactRing({ progress }: ImpactRingProps) {
+    const percentage = Math.round(progress);
     return (
         <div className="relative flex h-24 w-24 items-center justify-center">
             <svg className="h-24 w-24 -rotate-90" viewBox="0 0 100 100">
@@ -63,12 +78,12 @@ function ImpactRing() {
                     className="stroke-emerald-500"
                     strokeWidth="10"
                     fill="none"
-                    strokeDasharray={`${progress * 264} 999`}
+                    strokeDasharray={`${(progress / 100) * 264} 999`}
                     strokeLinecap="round"
                 />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-lg font-bold text-slate-900">78%</span>
+                <span className="text-lg font-bold text-slate-900">{percentage}%</span>
                 <span className="text-xs text-slate-500">to next level</span>
             </div>
         </div>
@@ -94,10 +109,56 @@ function StatusTooltip({ active, payload }: StatusTooltipProps) {
 }
 
 export function DonorDashboard() {
+    const { user } = useAuth();
+
+    // Get deterministic stats from the simulation engine
+    const stats = useMemo(() => {
+        if (!user) return null;
+        const result = getSimulatedStats(user);
+        return result.role === "donor" ? result as DonorStats : null;
+    }, [user]);
+
+    const impactLevel = useMemo(() => {
+        return getImpactLevel(stats?.impactScore ?? 0);
+    }, [stats?.impactScore]);
+
+    const statusData = useMemo(() => {
+        return generateStatusData(stats?.donations ?? 1);
+    }, [stats?.donations]);
+
+    const activityItems = useMemo(() => {
+        return generateActivityItems(stats?.donations ?? 1);
+    }, [stats?.donations]);
+
+    if (!stats) {
+        return null;
+    }
+
+    const displayStats = [
+        {
+            title: "Total Donations",
+            value: stats.donations.toString(),
+            helper: `${stats.mealsProvided} meals provided`,
+            accentClass: "bg-emerald-100 text-emerald-800",
+        },
+        {
+            title: "Food Saved",
+            value: `${stats.kgSaved} kg`,
+            helper: "From going to waste",
+            accentClass: "bg-blue-100 text-blue-800",
+        },
+        {
+            title: "Impact Score",
+            value: stats.impactScore.toLocaleString(),
+            helper: `${impactLevel.level} • Level ${impactLevel.tier}`,
+            accentClass: "bg-amber-100 text-amber-800",
+        },
+    ];
+
     return (
         <motion.div initial="hidden" animate="show" variants={containerVariants} className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {stats.map((stat) => {
+                {displayStats.map((stat) => {
                     const isImpact = stat.title === "Impact Score";
                     return (
                         <motion.div key={stat.title} variants={itemVariants}>
@@ -107,7 +168,7 @@ export function DonorDashboard() {
                                 helper={isImpact ? stat.helper : undefined}
                                 badgeText={!isImpact ? stat.helper : undefined}
                                 badgeClassName={!isImpact ? stat.accentClass : undefined}
-                                endAddon={isImpact ? <ImpactRing /> : undefined}
+                                endAddon={isImpact ? <ImpactRing progress={impactLevel.progress} /> : undefined}
                                 tone="emerald"
                             />
                         </motion.div>
