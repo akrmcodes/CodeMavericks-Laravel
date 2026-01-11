@@ -271,7 +271,7 @@ export function Footer() {
                         transition={{ delay: 0.6 }}
                         className="flex items-center gap-4"
                     >
-                        <Link href="https://github.com/zerohunger" className="hover:text-emerald-600" target="_blank">
+                        <Link href="https://github.com/akrmcodes/ZeroHunger-Monorepo" className="hover:text-emerald-600" target="_blank">
                             Open Source
                         </Link>
                         <span className="text-slate-300">|</span>
